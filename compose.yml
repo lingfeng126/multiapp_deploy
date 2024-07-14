@@ -1,0 +1,72 @@
+version: "0.0.1"
+
+services:
+  nginx:
+    image: nginx:latest
+    container_name: app2_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./test:/usr/share/nginx/html/test
+    networks:
+      - app1
+      - app2
+
+  app1_front:
+    image: nginx:latest
+    container_name: app1_front
+    volumes:
+      - ./app1/frontend/dist:/usr/share/nginx/html
+    networks:
+      - app1
+
+  app1_back:
+    image: backend_image:latest
+    container_name: app1_back
+    command: ['uvicorn', 'main:app', '--host', '0.0.0.0', '--port', '80']
+    volumes:
+      - ./app1/backend/code:/app
+    networks:
+      - app1
+      - database
+
+  app2_front:
+    image: nginx:latest
+    container_name: app2_front
+    volumes:
+      - ./app2/frontend/dist:/usr/share/nginx/html
+    networks:
+      - app2
+
+  app2_back:
+    image: backend_image:latest
+    container_name: app2_back
+    command: ['uvicorn', 'main:app', '--host', '0.0.0.0', '--port', '80']
+    volumes:
+      - ./app2/backend/code:/app
+    networks:
+      - app2
+      - database
+
+  db:
+    image: mysql:8.0
+    container_name: database
+    volumes:
+      - ./db:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=123456
+    # ports:
+    #   - 3306:3306
+    #   - 33060:33060
+    networks:
+      - database
+
+networks:
+  app1:
+    name: app1-proxy
+    driver: bridge
+  app2:
+    name: app2-proxy
+    driver: bridge
+  database:
